@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../models/timezone_store.dart';
 import '../models/timezone_item.dart';
@@ -20,6 +21,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   double hourOffset = 0;
+
+
 
   TimeZoneItem? get homeTimeZone {
     final store = Provider.of<TimeZoneStore>(context, listen: false);
@@ -48,6 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final settings = Provider.of<AppSettings>(context);
     // Determine brightness based on settings
@@ -59,37 +67,37 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.background,
       body: Stack(
-        alignment: Alignment.bottomCenter,
         children: [
-          Column(
-             children: [
-               // Header
-               _buildHeader(theme, context),
-               
-               // List
-               Expanded(
-                 child: ListView.builder(
-                   padding: EdgeInsets.fromLTRB(16, 16, 16, 220 + MediaQuery.of(context).padding.bottom), // Bottom padding for slider + safe area
-                   itemCount: sortedTimeZones.length,
-                   itemBuilder: (context, index) {
-                     final tzItem = sortedTimeZones[index];
-                     return Padding(
-                       padding: const EdgeInsets.only(bottom: 2),
-                       child: TimeZoneCard(
-                         timeZone: tzItem,
-                         hourOffset: hourOffset,
-                         homeTimeZone: homeTimeZone,
-                         showCenterLine: settings.showCenterLine,
-                         theme: theme,
-                       ),
-                     );
-                   },
-                 ),
-               ),
-             ],
+          // Main Content Layer
+          SafeArea(
+            bottom: false, // Slider handles bottom safe area
+            child: Column(
+              children: [
+                _buildHeader(theme, context),
+                Expanded(
+                  child: ListView.builder(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, 220 + MediaQuery.of(context).padding.bottom),
+                    itemCount: sortedTimeZones.length,
+                    itemBuilder: (context, index) {
+                      final tzItem = sortedTimeZones[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: TimeZoneCard(
+                          timeZone: tzItem,
+                          hourOffset: hourOffset,
+                          homeTimeZone: homeTimeZone,
+                          showCenterLine: settings.showCenterLine,
+                          theme: theme,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
           
-          // Slider Overlay
+          // Slider Layer
           Positioned(
             bottom: 0,
             left: 0,
@@ -126,23 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const Spacer(),
-            IconButton(
-              icon: Icon(Icons.add, color: theme.headerText, size: 28),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  barrierColor: Colors.black.withOpacity(0.5),
-                  builder: (context) => GlassBottomSheet(
-                    title: "Add Timezone",
-                    actionText: "Done",
-                    onAction: () => Navigator.pop(context),
-                    child: const AddTimeZoneScreen(),
-                  ),
-                );
-              },
-            ),
+
             const SizedBox(width: 8),
              GestureDetector(
                onTap: () {
@@ -155,18 +147,19 @@ class _HomeScreenState extends State<HomeScreen> {
                      title: "Settings",
                      actionText: "Done",
                      onAction: () => Navigator.pop(context),
+                     // User requested + icon removal from header
                      child: const SettingsScreen(),
                    ),
                  );
                },
                child: Container(
                  width: 36, height: 36,
-                 decoration: BoxDecoration(
-                   shape: BoxShape.circle,
-                   color: Colors.transparent,
-                   border: Border.all(color: theme.headerText.withOpacity(0.3), width: 2),
+                 child: SvgPicture.asset(
+                   "assets/images/brand.svg",
+                   colorFilter: ColorFilter.mode(theme.headerText, BlendMode.srcIn),
+                   height: 20,
+                   width: 20,
                  ),
-                 child: Icon(Icons.settings, color: theme.headerText, size: 20),
                ),
              ),
           ],

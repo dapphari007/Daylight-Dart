@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/timezone_item.dart';
 import '../utils/theme_colors.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_svg/flutter_svg.dart';
 
 class TimeZoneCard extends StatelessWidget {
   final TimeZoneItem timeZone;
@@ -205,29 +207,35 @@ class TimeZoneCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            isDaylight ? Icons.wb_sunny_rounded : Icons.nightlight_round,
-            color: textColor,
-            size: 16,
-          ),
+          isDaylight
+              ? SvgPicture.asset(
+                  "assets/images/sun.svg",
+                  height: 16,
+                  width: 16,
+                  colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+                )
+              : SvgPicture.asset(
+                  "assets/images/moon.svg",
+                  height: 14, // Moon is usually slightly smaller visually in SF Symbols
+                  width: 14,
+                  colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+                ),
           const SizedBox(height: 3),
           Text(
             timeZone.formattedTime(offsetBy: hourOffset),
-            style: TextStyle(
+            style: GoogleFonts.outfit(
               color: textColor,
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              fontFamily: 'Rounded', // Needs custom font setup or standard
             ),
           ),
           const SizedBox(height: 2), // Slight spacing
           Text(
             "${timeZone.cityName} (${timeZone.abbreviation})",
-            style: TextStyle(
+            style: GoogleFonts.outfit(
               color: textColor,
               fontSize: 18,
               fontWeight: FontWeight.w300,
-              fontFamily: 'Rounded',
             ),
           ),
           const SizedBox(height: 3),
@@ -237,28 +245,31 @@ class TimeZoneCard extends StatelessWidget {
               if (isHomeTimezone)
                 Padding(
                   padding: const EdgeInsets.only(right: 3),
-                  child: Icon(Icons.navigation, size: 12, color: textColor),
+                  child: SvgPicture.asset(
+                    "assets/images/navigation.svg",
+                    height: 12,
+                    width: 12,
+                    colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+                  ),
                 )
               else if (offsetFromHomeText != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 3),
                   child: Text(
                     "${offsetFromHomeText!},",
-                    style: TextStyle(
+                    style: GoogleFonts.outfit(
                       color: textColor,
                       fontSize: 14,
                       fontWeight: FontWeight.w300,
-                      fontFamily: 'Rounded',
                     ),
                   ),
                 ),
               Text(
                 formattedDayDate,
-                style: TextStyle(
+                style: GoogleFonts.outfit(
                   color: textColor,
                   fontSize: 14,
                   fontWeight: FontWeight.w300,
-                  fontFamily: 'Rounded',
                 ),
               ),
             ],

@@ -2,9 +2,15 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../models/timezone_item.dart';
 import '../utils/theme_colors.dart';
+import '../utils/app_settings.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:vibration/vibration.dart';
 
 class TimeSlider extends StatefulWidget {
   final double hourOffset;
@@ -29,6 +35,12 @@ class _TimeSliderState extends State<TimeSlider> {
   double dragStartOffset = 0;
   int lastHapticHour = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    lastHapticHour = (widget.hourOffset * 4).round();
+  }
+
   double get currentHomeHour {
     if (widget.homeTimeZone == null) return 12;
     final now = DateTime.now().toUtc();
@@ -37,12 +49,9 @@ class _TimeSliderState extends State<TimeSlider> {
   }
   
   String formatTimeLabel() {
-    if (widget.homeTimeZone != null) {
-      return widget.homeTimeZone!.formattedTime(offsetBy: widget.hourOffset);
-    }
-    final hours = widget.hourOffset.round();
-    final label = hours > 0 ? "later" : "earlier";
-    return "${hours.abs()}h $label";
+     if (widget.homeTimeZone == null) return "Now";
+     final zonedDate = tz.TZDateTime.now(widget.homeTimeZone!.location).add(Duration(minutes: (widget.hourOffset * 60).round()));
+     return DateFormat('h:mm a').format(zonedDate);
   }
 
   @override
@@ -52,20 +61,23 @@ class _TimeSliderState extends State<TimeSlider> {
     const knobWidth = 38.0;
     
     // We wrap everything in a glass container with padding around it
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+     final isDark = Theme.of(context).brightness == Brightness.dark;
+     final bottomPadding = MediaQuery.of(context).padding.bottom;
+     final settings = Provider.of<AppSettings>(context);
+    
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, 20 + bottomPadding), // Float off the bottom respecting safe area
       child: ClipRRect(
         borderRadius: BorderRadius.circular(44), // Large rounded pill shape
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
             height: 140, // Reduced height for the contained look
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.65), // Dark semi-transparent
+              color: isDark ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.4),
               borderRadius: BorderRadius.circular(44),
               border: Border.all(
-                color: Colors.white.withOpacity(0.12),
+                color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05),
                 width: 1,
               ),
             ),
@@ -88,22 +100,14 @@ class _TimeSliderState extends State<TimeSlider> {
                      Row(
                        mainAxisAlignment: MainAxisAlignment.center,
                        children: [
-                         Text(
-                           (widget.hourOffset.abs() < 0.01) ? "Now" : "${widget.hourOffset > 0 ? '+' : ''}${widget.hourOffset.round()}h",
+                           Text(
+                           (widget.hourOffset.abs() < 0.01) ? "Now" : formatTimeLabel(),
                            style: const TextStyle(
                              fontSize: 17,
                              fontWeight: FontWeight.w700,
-                             color: Color(0xFFFFCC00), // Brighter yellow matching image
+                             color: const Color(0xFFFFCC00), // Brighter yellow matching image
                            ),
                          ),
-                         if (widget.hourOffset.abs() >= 0.01)
-                           Padding(
-                             padding: const EdgeInsets.only(left: 8.0),
-                             child: GestureDetector(
-                               onTap: () => widget.onHourOffsetChanged(0),
-                               child: Icon(Icons.cancel, color: Colors.white.withOpacity(0.5), size: 16),
-                             ),
-                           )
                        ],
                      ),
                      const SizedBox(height: 12),
@@ -124,12 +128,13 @@ class _TimeSliderState extends State<TimeSlider> {
                                centerX: centerX,
                                trackWidth: trackWidth,
                                theme: widget.theme,
+                               isDark: isDark,
                              ),
                            ),
-                           Positioned(
-                             left: knobX - (knobWidth / 2),
-                             top: -9,
-                             child: GestureDetector(
+                            Positioned(
+                              left: knobX - (knobWidth / 2),
+                              top: 0,
+                              child: GestureDetector(
                                onHorizontalDragStart: (details) {
                                  setState(() {
                                    isDragging = true;
@@ -137,7 +142,9 @@ class _TimeSliderState extends State<TimeSlider> {
                                  });
                                },
                                onHorizontalDragUpdate: (details) {
-                                   final dragHours = details.primaryDelta! / pixelsPerHour;
+                                   // Sensitivity factor: 1.5x (makes it easier to drag)
+                                   final sensitivity = 1.5; 
+                                   final dragHours = (details.primaryDelta! * sensitivity) / pixelsPerHour;
                                    
                                    double newOffset = widget.hourOffset + dragHours;
                                    newOffset = newOffset.clamp(-12.0, 12.0);
@@ -149,6 +156,7 @@ class _TimeSliderState extends State<TimeSlider> {
                                     // Snap logic for HAPTICS only, visual is fluid? 
                                     // Actually original code snapped the value.
                                     // Let's stick to snap for now as it makes reading easier.
+                                   // Snap to 15 mins (0.25h)
                                    final currentMinuteFraction = DateTime.now().minute / 60.0;
                                    final targetTime = currentMinuteFraction + newOffset;
                                    final snappedTarget = (targetTime * 4).round() / 4.0;
@@ -157,7 +165,7 @@ class _TimeSliderState extends State<TimeSlider> {
                                    // Haptic
                                    final currentInterval = (snappedOffset * 4).round();
                                    if (currentInterval != lastHapticHour) {
-                                     HapticFeedback.selectionClick();
+                                     Vibration.vibrate(duration: 200);
                                      lastHapticHour = currentInterval;
                                    }
                                    
@@ -181,7 +189,7 @@ class _TimeSliderState extends State<TimeSlider> {
                        width: trackWidth,
                        height: 4,
                        child: CustomPaint(
-                          painter: TickPainter(trackWidth: trackWidth, knobX: knobX, theme: widget.theme),
+                          painter: TickPainter(trackWidth: trackWidth, knobX: knobX, theme: widget.theme, isDark: isDark),
                        ),
                      ),
                      
@@ -191,17 +199,24 @@ class _TimeSliderState extends State<TimeSlider> {
                        Row(
                          mainAxisAlignment: MainAxisAlignment.center,
                          children: [
-                           Icon(Icons.navigation, size: 14, color: Colors.white.withOpacity(0.7)),
-                           const SizedBox(width: 4),
-                           Text(
-                             widget.homeTimeZone!.formattedTime(offsetBy: widget.hourOffset),
-                             style: TextStyle(
-                               fontSize: 15, 
-                               fontWeight: FontWeight.w400, 
-                               color: Colors.white.withOpacity(0.9), // Bright white for legibility on glass
-                               fontFamily: 'Inter',
-                             ),
+                           SvgPicture.asset(
+                             "assets/images/navigation.svg",
+                             height: 14,
+                             width: 14,
+                              colorFilter: ColorFilter.mode(
+                                  isDark ? Colors.white.withOpacity(0.7) : Colors.black.withOpacity(0.6), 
+                                  BlendMode.srcIn
+                              ),
                            ),
+                           const SizedBox(width: 4),
+                            Text(
+                              widget.homeTimeZone!.formattedTime(offsetBy: widget.hourOffset),
+                              style: GoogleFonts.outfit(
+                                fontSize: 15, 
+                                fontWeight: FontWeight.w400, 
+                                color: isDark ? Colors.white.withOpacity(0.9) : Colors.black.withOpacity(0.9),
+                              ),
+                            ),
                          ],
                        ),
                   ],
@@ -222,11 +237,11 @@ class _TimeSliderState extends State<TimeSlider> {
          color: Colors.white,
          borderRadius: BorderRadius.circular(12),
          boxShadow: [
-           BoxShadow(
-             color: Colors.black.withOpacity(0.2),
-             blurRadius: 4,
-             offset: const Offset(0, 2),
-           )
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
          ],
        ),
      );
@@ -246,7 +261,10 @@ class SliderTrackPainter extends CustomPainter {
     required this.centerX,
     required this.trackWidth,
     required this.theme,
+    required this.isDark,
   });
+  
+  final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -255,7 +273,7 @@ class SliderTrackPainter extends CustomPainter {
     final trackRRect = RRect.fromRectAndRadius(trackRect, const Radius.circular(2));
     
     // Draw Background Track (Dark Grey)
-    final bgPaint = Paint()..color = Colors.white.withOpacity(0.1);
+    final bgPaint = Paint()..color = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1);
     canvas.drawRRect(trackRRect, bgPaint);
 
     // Calculate Segments for Daylight
@@ -323,8 +341,9 @@ class TickPainter extends CustomPainter {
   final double trackWidth;
   final double knobX;
   final ThemeColors theme;
+  final bool isDark;
 
-  TickPainter({required this.trackWidth, required this.knobX, required this.theme});
+  TickPainter({required this.trackWidth, required this.knobX, required this.theme, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -337,7 +356,7 @@ class TickPainter extends CustomPainter {
        final paint = Paint()
          ..color = isAtKnob 
              ? const Color(0xFFFFCC00) // Active tick yellow
-             : Colors.white.withOpacity(0.3) // Inactive white dim
+             : (isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.2)) // Inactive dim
          ..style = PaintingStyle.fill;
          
        // User requested "dots"

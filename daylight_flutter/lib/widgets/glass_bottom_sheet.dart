@@ -1,10 +1,12 @@
   import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class GlassBottomSheet extends StatelessWidget {
   final String title;
   final String? actionText;
   final VoidCallback? onAction;
+  final VoidCallback? onAdd;
   final Widget child;
 
   const GlassBottomSheet({
@@ -12,23 +14,29 @@ class GlassBottomSheet extends StatelessWidget {
     required this.title,
     this.actionText,
     this.onAction,
+    this.onAdd,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10), // Safe area + margin
+      // Floating margins: Left/Right 12, Top (Safe Area + 12), Bottom (Safe Area + 12)
+      padding: EdgeInsets.fromLTRB(12, MediaQuery.of(context).padding.top + 12, 12, MediaQuery.of(context).padding.bottom + 12),
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: BorderRadius.circular(32), // Fully rounded corners
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.65), // Dark semi-transparent matching TimeSlider
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            color: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.black.withOpacity(0.5) 
+                : Colors.white.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(32),
             border: Border.all(
-              color: Colors.white.withOpacity(0.12),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.12)
+                  : Colors.black.withOpacity(0.05),
               width: 1,
             ),
           ),
@@ -41,7 +49,9 @@ class GlassBottomSheet extends StatelessWidget {
                 width: 40,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white.withOpacity(0.3) 
+                      : Colors.black.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
@@ -52,24 +62,33 @@ class GlassBottomSheet extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
-                    // Empty space to balance action text if needed, or centered title logic
-                    // If actionText is present, we might want a leading widget of same size to perfectly center title
-                    // For now, Expanded is fine.
-                    Expanded(
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter', // Assuming Inter is available/desired
-                        ),
+                    // Left Spacer for centering
+                    const Spacer(),
+                    // Centered Title
+                    Text(
+                      title,
+                      style: GoogleFonts.outfit(
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                    // Right Spacer for centering
+                    const Spacer(),
+                    // Action Buttons on the right
+                    if (onAdd != null) ...[
+                      GestureDetector(
+                        onTap: onAdd,
+                        child: Icon(
+                          Icons.add, 
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, 
+                          size: 28
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
                     if (actionText != null) ...[
-                      // If we want perfect centering, we might need a Stack, but Row is usually fine for simple sheets
-                       GestureDetector(
+                      GestureDetector(
                         onTap: onAction,
                         child: Text(
                           actionText!,
@@ -84,7 +103,12 @@ class GlassBottomSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              Divider(height: 1, color: Colors.white.withOpacity(0.1)),
+              Divider(
+                  height: 1, 
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white.withOpacity(0.1) 
+                      : Colors.black.withOpacity(0.1)
+              ),
               
               // Content
               Flexible(child: child),

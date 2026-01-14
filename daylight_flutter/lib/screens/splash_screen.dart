@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import '../utils/theme_colors.dart';
 import 'home_screen.dart';
@@ -77,10 +78,41 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const SizedBox(height: 12),
                 // Kaaspro Logo
-                Image.asset(
-                  "assets/images/kasspro_logo.png",
-                  height: 40, 
-                  fit: BoxFit.contain,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  // No background color for adaptive look, or transparent
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // "Reverse K" symbol
+                      Text(
+                        ">|", 
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black, 
+                          fontSize: 20, 
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -2,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      // "kaaspro" text
+                      RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontFamily: 'Sans', // Default system font
+                            fontSize: 22, // Slightly larger to match standard logo visual
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                          children: const [
+                            TextSpan(text: "kaa"),
+                            TextSpan(text: "s", style: TextStyle(color: Color(0xFFE91E63))), // Pink accent always
+                            TextSpan(text: "pro"),
+                          ]
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

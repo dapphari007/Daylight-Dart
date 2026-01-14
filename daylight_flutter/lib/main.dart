@@ -13,10 +13,13 @@ void main() async {
   final store = TimeZoneStore();
   await store.init();
 
+  final settings = AppSettings();
+  await settings.init();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AppSettings()),
+        ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: store),
       ],
       child: const DaylightApp(),

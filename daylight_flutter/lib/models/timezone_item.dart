@@ -6,23 +6,23 @@ class TimeZoneItem {
   final String id;
   final String identifier;
   final String cityName;
-  final String abbreviation;
+  final String _storedAbbreviation; // Kept for JSON compatibility, but we compute dynamically
   bool isHome;
 
   TimeZoneItem({
     String? id,
     required this.identifier,
     required this.cityName,
-    required this.abbreviation,
+    required String abbreviation,
     this.isHome = false,
-  }) : id = id ?? Uuid().v4();
+  }) : id = id ?? Uuid().v4(), _storedAbbreviation = abbreviation;
 
   factory TimeZoneItem.fromJson(Map<String, dynamic> json) {
     return TimeZoneItem(
       id: json['id'],
       identifier: json['identifier'],
       cityName: json['cityName'],
-      abbreviation: json['abbreviation'],
+      abbreviation: json['abbreviation'] ?? '',
       isHome: json['isHome'] ?? false,
     );
   }
@@ -32,9 +32,19 @@ class TimeZoneItem {
       'id': id,
       'identifier': identifier,
       'cityName': cityName,
-      'abbreviation': abbreviation,
+      'abbreviation': _storedAbbreviation,
       'isHome': isHome,
     };
+  }
+  
+  // Dynamic abbreviation handling DST (EST/EDT)
+  String get abbreviation {
+    try {
+      final now = tz.TZDateTime.now(location);
+      return now.timeZoneName;
+    } catch (e) {
+      return _storedAbbreviation; // Fallback to hardcoded
+    }
   }
   
   tz.Location get location {
