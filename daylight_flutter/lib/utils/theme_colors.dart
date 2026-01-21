@@ -18,12 +18,12 @@ class ThemeColors {
       : const Color(0xFF3C3C43);
 
   Color get centerLine => brightness == Brightness.dark 
-      ? Colors.white.withOpacity(0.25) 
-      : Colors.black.withOpacity(0.15);
+      ? Colors.white.withValues(alpha: 0.25) 
+      : Colors.black.withValues(alpha: 0.15);
 
   Color get sliderTrackBackground => brightness == Brightness.dark 
-      ? Colors.white.withOpacity(0.2) 
-      : Colors.black.withOpacity(0.1);
+      ? Colors.white.withValues(alpha: 0.2) 
+      : Colors.black.withValues(alpha: 0.1);
 
   Color get sliderKnob => Colors.white;
 
@@ -32,8 +32,8 @@ class ThemeColors {
   Color get tickMark => brightness == Brightness.dark ? Colors.white : Colors.black;
 
   Color get closeButton => brightness == Brightness.dark 
-      ? Colors.white.withOpacity(0.6) 
-      : Colors.black.withOpacity(0.4);
+      ? Colors.white.withValues(alpha: 0.6) 
+      : Colors.black.withValues(alpha: 0.4);
 
   // Constants
   static const daylightStart = Color(0xFFFFD900);

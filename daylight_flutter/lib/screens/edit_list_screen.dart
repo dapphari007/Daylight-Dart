@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/timezone_store.dart';
-import '../models/timezone_item.dart';
 
 class EditListScreen extends StatelessWidget {
   const EditListScreen({super.key});

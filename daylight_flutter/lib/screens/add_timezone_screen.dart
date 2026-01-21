@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/timezone_store.dart';
 import '../models/timezone_item.dart';
 import '../models/available_timezones.dart';
+
 import 'package:vibration/vibration.dart';
 
 class AddTimeZoneScreen extends StatefulWidget {
@@ -60,66 +63,54 @@ class _AddTimeZoneScreenState extends State<AddTimeZoneScreen> {
     final store = Provider.of<TimeZoneStore>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // We use the app's theme instead of forcing dark, but the sheet has its own glass style.
-    // However, user specifically asked for "Search bar at bottom".
-    
     return Column(
       children: [
-        // List (Expanded)
-        Expanded(
-          child: ListView.separated(
-            controller: widget.scrollController, // Attach draggable controller
-            padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-            itemCount: filteredTimeZones.length,
-            separatorBuilder: (c, i) => Divider(
-              height: 1, 
-              color: isDark ? Colors.grey.withOpacity(0.2) : Colors.black.withOpacity(0.1), 
-              indent: 16
+        // Search Bar at Top
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Container(
+            height: 36,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C1C1E) : const Color(0x1F767680), // iOS Search Field Fill
+              borderRadius: BorderRadius.circular(10),
             ),
-            itemBuilder: (context, index) {
-              final tz = filteredTimeZones[index];
-              final added = isAlreadyAdded(store, tz);
-              
-              return ListTile(
-                title: Text(tz.cityName, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
-                subtitle: Text(tz.abbreviation, style: TextStyle(color: isDark ? Colors.grey : Colors.grey.shade600)),
-                trailing: added 
-                    ? Container(
-                        padding: const EdgeInsets.all(2), // Adjust for size
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF34C759), // Bright Green
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.check, color: Colors.white, size: 16),
-                      )
-                    : null,
-                onTap: () => toggleTimeZone(context, tz),
-              );
-            },
-          ),
-        ),
-        
-        // Search Bar at Bottom (Safe Area)
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8), // Padding around search bar
             child: TextField(
               controller: _searchController,
-              autofocus: false, // Don't auto-open keyboard as it might cover sheet
-              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+              textAlignVertical: TextAlignVertical.center,
+              style: GoogleFonts.outfit(
+                color: isDark ? Colors.white : Colors.black,
+                fontSize: 17,
+              ),
               cursorColor: const Color(0xFFFF9900),
               decoration: InputDecoration(
-                hintText: "Search cities",
-                hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.4)),
-                prefixIcon: Icon(Icons.search, color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.4)),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF2C2C2E) : Colors.grey.shade200, 
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                prefixIcon: Icon(
+                  CupertinoIcons.search,
+                  size: 20,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                hintText: "Search cities",
+                hintStyle: GoogleFonts.outfit(
+                  color: isDark ? Colors.grey.shade600 : Colors.grey.shade500,
+                  fontSize: 17,
+                ),
+                border: InputBorder.none,
+                suffixIcon: searchText.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () {
+                          _searchController.clear();
+                          setState(() {
+                            searchText = "";
+                          });
+                        },
+                        child: Icon(
+                          CupertinoIcons.clear_circled_solid,
+                          size: 18,
+                          color: isDark ? Colors.grey : Colors.grey.shade600,
+                        ),
+                      )
+                    : null,
               ),
               onChanged: (value) {
                 setState(() {
@@ -127,6 +118,75 @@ class _AddTimeZoneScreenState extends State<AddTimeZoneScreen> {
                 });
               },
             ),
+          ),
+        ),
+
+        // List (Expanded)
+        Expanded(
+          child: ListView.separated(
+            controller: widget.scrollController, 
+            padding: const EdgeInsets.symmetric(horizontal: 16), // Boxed list style? No, usually edge to edge or 16pad. Screenshot shows full width separators? No, inset.
+            // But wait, the screenshot shows the list content. It looks like standard iOS List.
+            itemCount: filteredTimeZones.length,
+            separatorBuilder: (c, i) => Divider(
+              height: 1, 
+              color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.1), 
+              indent: 0 // Screenshot seems to have full width or slight indent. I'll use 0 or standard 16. iOS uses 16 indent generally.
+            ),
+            itemBuilder: (context, index) {
+              final tz = filteredTimeZones[index];
+              final added = isAlreadyAdded(store, tz);
+              
+              return InkWell(
+                onTap: added ? null : () {
+                   // Add and Dismiss
+                   final newItem = TimeZoneItem(
+                     identifier: tz.identifier,
+                     cityName: tz.cityName,
+                     abbreviation: tz.abbreviation,
+                     isHome: false, 
+                   );
+                   store.addTimeZone(newItem);
+                   Navigator.of(context).pop();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                       Expanded(
+                         child: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Text(
+                               tz.cityName, 
+                               style: GoogleFonts.outfit(
+                                 fontWeight: FontWeight.w600, 
+                                 fontSize: 17,
+                                 color: isDark ? Colors.white : Colors.black
+                               )
+                             ),
+                             const SizedBox(height: 2),
+                             Text(
+                               tz.abbreviation, 
+                               style: GoogleFonts.outfit(
+                                 color: isDark ? Colors.grey : Colors.grey.shade600,
+                                 fontSize: 13,
+                               )
+                             ),
+                           ],
+                         ),
+                       ),
+                       if (added)
+                         Icon(
+                           CupertinoIcons.checkmark_alt_circle_fill, 
+                           color: const Color(0xFFFF9900), 
+                           size: 22
+                         ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],

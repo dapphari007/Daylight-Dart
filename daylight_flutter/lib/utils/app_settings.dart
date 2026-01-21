@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppSettings extends ChangeNotifier {
   static const String _prefShowCenterLine = 'showCenterLine';
   static const String _prefThemeMode = 'themeMode';
-  static const String _prefVibrationConsent = 'vibrationConsent';
 
   late SharedPreferences _prefs;
   bool _isInitialized = false;

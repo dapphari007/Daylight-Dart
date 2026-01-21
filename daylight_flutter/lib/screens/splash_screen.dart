@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import '../utils/theme_colors.dart';
 import 'home_screen.dart';
@@ -86,7 +85,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     children: [
                       // "Reverse K" symbol
                       Text(
-                        ">|", 
+                        "", 
                         style: TextStyle(
                           color: isDark ? Colors.white : Colors.black, 
                           fontSize: 20, 

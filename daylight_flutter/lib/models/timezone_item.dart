@@ -41,7 +41,15 @@ class TimeZoneItem {
   String get abbreviation {
     try {
       final now = tz.TZDateTime.now(location);
-      return now.timeZoneName;
+      final dynamicName = now.timeZoneName;
+      
+      // If dynamicName looks like an offset (e.g., "-04", "+0530"), prefer the stored static abbreviation.
+      // Regex checks for starting with + or - followed by a digit.
+      if (RegExp(r'^[\+\-]\d').hasMatch(dynamicName) && _storedAbbreviation.isNotEmpty) {
+        return _storedAbbreviation;
+      }
+      
+      return dynamicName;
     } catch (e) {
       return _storedAbbreviation; // Fallback to hardcoded
     }

@@ -1,11 +1,8 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../models/timezone_item.dart';
 import '../utils/theme_colors.dart';
-import '../utils/app_settings.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -63,21 +60,21 @@ class _TimeSliderState extends State<TimeSlider> {
     // We wrap everything in a glass container with padding around it
      final isDark = Theme.of(context).brightness == Brightness.dark;
      final bottomPadding = MediaQuery.of(context).padding.bottom;
-     final settings = Provider.of<AppSettings>(context);
+     // settings variable removed as it was unused
     
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, 20 + bottomPadding), // Float off the bottom respecting safe area
+      padding: EdgeInsets.fromLTRB(24, 0, 24, 20 + bottomPadding), // Increased side padding for floating look
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(44), // Large rounded pill shape
+        borderRadius: BorderRadius.circular(64), // Full rounded pill shape (Height 128 / 2 = 64)
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
-            height: 140, // Reduced height for the contained look
+            height: 128, // Compact height for pill look
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(44),
+              color: isDark ? Colors.black.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(64),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05),
+                color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.05),
                 width: 1,
               ),
             ),
@@ -99,15 +96,37 @@ class _TimeSliderState extends State<TimeSlider> {
                      // Label ("Now" or "+Xh")
                      Row(
                        mainAxisAlignment: MainAxisAlignment.center,
-                       children: [
-                           Text(
-                           (widget.hourOffset.abs() < 0.01) ? "Now" : formatTimeLabel(),
-                           style: const TextStyle(
-                             fontSize: 17,
-                             fontWeight: FontWeight.w700,
-                             color: const Color(0xFFFFCC00), // Brighter yellow matching image
+                      children: [
+                          ShaderMask(
+                            shaderCallback: (bounds) => const LinearGradient(
+                              colors: [Color(0xFFFFD900), Color(0xFFFF9900)],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ).createShader(bounds),
+                            child: Text(
+                              (widget.hourOffset.abs() < 0.01) ? "Now" : formatTimeLabel(),
+                              style: GoogleFonts.outfit(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white, // Required for ShaderMask
+                              ),
+                            ),
+                          ),
+                         if (widget.hourOffset.abs() >= 0.01) ...[
+                           const SizedBox(width: 8),
+                           GestureDetector(
+                             onTap: () => widget.onHourOffsetChanged(0),
+                             child: Container(
+                               width: 20, 
+                               height: 20,
+                               decoration: const BoxDecoration( // iOS System Grey
+                                 color: Color(0xFF8E8E93),
+                                 shape: BoxShape.circle,
+                               ),
+                               child: const Icon(Icons.close, size: 14, color: Colors.white),
+                             ),
                            ),
-                         ),
+                         ],
                        ],
                      ),
                      const SizedBox(height: 12),
@@ -204,17 +223,17 @@ class _TimeSliderState extends State<TimeSlider> {
                              height: 14,
                              width: 14,
                               colorFilter: ColorFilter.mode(
-                                  isDark ? Colors.white.withOpacity(0.7) : Colors.black.withOpacity(0.6), 
+                                  isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.6), 
                                   BlendMode.srcIn
                               ),
                            ),
                            const SizedBox(width: 4),
                             Text(
-                              widget.homeTimeZone!.formattedTime(offsetBy: widget.hourOffset),
+                              widget.homeTimeZone!.formattedTime(), // Removed offsetBy to keep it constant
                               style: GoogleFonts.outfit(
                                 fontSize: 15, 
                                 fontWeight: FontWeight.w400, 
-                                color: isDark ? Colors.white.withOpacity(0.9) : Colors.black.withOpacity(0.9),
+                                color: isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black.withValues(alpha: 0.9),
                               ),
                             ),
                          ],
@@ -230,7 +249,8 @@ class _TimeSliderState extends State<TimeSlider> {
   }
 
   Widget _buildKnob() {
-     return Container(
+     return AnimatedContainer(
+       duration: const Duration(milliseconds: 200),
        width: 40,
        height: 24,
        decoration: BoxDecoration(
@@ -238,10 +258,16 @@ class _TimeSliderState extends State<TimeSlider> {
          borderRadius: BorderRadius.circular(12),
          boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 4,
               offset: const Offset(0, 2),
-            )
+            ),
+            if (isDragging)
+              BoxShadow(
+                color: const Color(0xFFFFCC00).withValues(alpha: 0.5), // Yellow glow
+                blurRadius: 8,
+                spreadRadius: 2,
+              )
          ],
        ),
      );
@@ -272,8 +298,8 @@ class SliderTrackPainter extends CustomPainter {
     final trackRect = Rect.fromLTWH(0, trackY, trackWidth, 4);
     final trackRRect = RRect.fromRectAndRadius(trackRect, const Radius.circular(2));
     
-    // Draw Background Track (Dark Grey)
-    final bgPaint = Paint()..color = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1);
+    // Draw Background Track (Black in Dark, White in Light)
+    final bgPaint = Paint()..color = isDark ? Colors.black : Colors.white;
     canvas.drawRRect(trackRRect, bgPaint);
 
     // Calculate Segments for Daylight
@@ -349,21 +375,20 @@ class TickPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final totalTicks = 17;
     for (int i = 0; i < totalTicks; i++) {
-       final isMajor = i % 2 == 0;
        final tickX = i * (trackWidth / (totalTicks - 1));
        final isAtKnob = (tickX - knobX).abs() < (trackWidth / (totalTicks - 1) / 2);
        
        final paint = Paint()
          ..color = isAtKnob 
              ? const Color(0xFFFFCC00) // Active tick yellow
-             : (isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.2)) // Inactive dim
+             : (isDark ? Colors.white : Colors.black) // Solid Black/White as requested
          ..style = PaintingStyle.fill;
          
-       // User requested "dots"
-       final radius = isMajor ? 2.5 : 1.5;
-       
-       canvas.drawCircle(Offset(tickX, size.height / 2), radius, paint);
-    } 
+        // Uniform size as requested
+        const radius = 2.0;
+        
+        canvas.drawCircle(Offset(tickX, size.height / 2), radius, paint);
+     } 
   }
 
   @override

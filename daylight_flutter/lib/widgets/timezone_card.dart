@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -49,7 +48,7 @@ class TimeZoneCard extends StatelessWidget {
   String? get offsetFromHomeText {
     if (homeTimeZone == null || isHomeTimezone) return null;
 
-    final now = tz.TZDateTime.now(tz.local); // Actual now
+    // Actual now used to be here, but unused logic removed
     final homeOffset = tz.TZDateTime.now(homeTimeZone!.location).timeZoneOffset.inMinutes;
     final thisOffset = tz.TZDateTime.now(timeZone.location).timeZoneOffset.inMinutes;
     
