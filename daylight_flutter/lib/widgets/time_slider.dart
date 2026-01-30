@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -32,11 +33,22 @@ class _TimeSliderState extends State<TimeSlider> {
   bool isDragging = false;
   double dragStartOffset = 0;
   int lastHapticHour = 0;
+  late Timer _updateTimer;
 
   @override
   void initState() {
     super.initState();
     lastHapticHour = (widget.hourOffset * 4).round();
+    // Update the display every second to reflect current time
+    _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _updateTimer.cancel();
+    super.dispose();
   }
 
   double get currentHomeHour {

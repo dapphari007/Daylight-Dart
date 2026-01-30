@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   double hourOffset = 0;
+  late Timer _updateTimer;
 
   TimeZoneItem? get homeTimeZone {
     final store = Provider.of<TimeZoneStore>(context, listen: false);
@@ -53,6 +55,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Update timezone displays every second to show current time
+    _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _updateTimer.cancel();
+    super.dispose();
   }
 
   @override
