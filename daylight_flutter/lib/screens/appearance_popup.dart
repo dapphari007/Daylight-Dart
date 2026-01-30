@@ -57,7 +57,7 @@ class _AppearancePopupState extends State<AppearancePopup> with SingleTickerProv
     // Let's center it horizontally on the screen for better aesthetics as per image 2 (which looks centered-ish or right aligned?).
     // Actually image 2 shows it over the row. Let's Center horizontally relative to the row.
     
-    const menuWidth = 250.0;
+    const double menuWidth = 250.0;
     final rowCenter = widget.triggerRect.center;
     final leftPos = rowCenter.dx - (menuWidth / 2);
     

@@ -53,7 +53,11 @@ class SettingsScreen extends StatelessWidget {
                      ),
                    ),
                    const SizedBox(width: 4),
-                   Icon(Icons.unfold_more, color: isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.6), size: 16),
+                   Icon(
+                     Icons.unfold_more,
+                     color: isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.6),
+                     size: 16,
+                   ),
                 ],
               ),
               onTap: () {

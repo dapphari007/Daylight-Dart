@@ -37,7 +37,7 @@ class TimeZoneItem {
     };
   }
   
-  static final _offsetRegex = RegExp(r'^[\+\-]\d');
+  static final RegExp _offsetRegex = RegExp(r'^[\+\-]\d');
 
   // Dynamic abbreviation handling DST (EST/EDT)
   String get abbreviation {

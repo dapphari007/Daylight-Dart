@@ -55,7 +55,7 @@ class AppearanceSheet extends StatelessWidget {
             ),
             const Spacer(),
             if (isSelected)
-              Icon(Icons.check, color: const Color(0xFFFFCC00), size: 20),
+              const Icon(Icons.check, color: Color(0xFFFFCC00), size: 20),
           ],
         ),
       ),

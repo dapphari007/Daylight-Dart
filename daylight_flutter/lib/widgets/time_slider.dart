@@ -59,6 +59,7 @@ class _TimeSliderState extends State<TimeSlider> {
     // We wrap everything in a glass container with padding around it
      final isDark = Theme.of(context).brightness == Brightness.dark;
      final bottomPadding = MediaQuery.of(context).padding.bottom;
+     final containerDecoration = _buildContainerDecoration(isDark);
      // settings variable removed as it was unused
     
     return Padding(
@@ -69,14 +70,7 @@ class _TimeSliderState extends State<TimeSlider> {
           filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
           child: Container(
             height: 128, // Compact height for pill look
-            decoration: BoxDecoration(
-              color: isDark ? Colors.black.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(64),
-              border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4),
-                width: 1,
-              ),
-            ),
+            decoration: containerDecoration,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: LayoutBuilder(builder: (context, constraints) {
               final sliderWidth = constraints.maxWidth;
@@ -120,6 +114,17 @@ class _TimeSliderState extends State<TimeSlider> {
     );
   }
 
+  BoxDecoration _buildContainerDecoration(bool isDark) {
+    return BoxDecoration(
+      color: isDark ? Colors.black.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(64),
+      border: Border.all(
+        color: isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4),
+        width: 1,
+      ),
+    );
+  }
+
   Widget _buildSliderLabels() {
     return Row(
        mainAxisAlignment: MainAxisAlignment.center,
@@ -159,7 +164,7 @@ class _TimeSliderState extends State<TimeSlider> {
   }
   
   Widget _buildSliderTrack(double trackWidth, double knobX, double pixelsPerHour, bool isDark) {
-    const knobWidth = 38.0;
+    const double knobWidth = 38.0;
     return SizedBox(
        width: trackWidth,
        height: 24,
@@ -262,9 +267,12 @@ class _TimeSliderState extends State<TimeSlider> {
      }
 
      // Determine border color
-     final borderColor = isDragging 
-         ? (isDark ? Colors.grey : Colors.white)
-         : null;
+     final Color? borderColor;
+     if (isDragging) {
+       borderColor = isDark ? Colors.grey : Colors.white;
+     } else {
+       borderColor = null;
+     }
 
      return AnimatedContainer(
        duration: const Duration(milliseconds: 200),
@@ -397,9 +405,12 @@ class TickPainter extends CustomPainter {
        final tickX = i * (trackWidth / (totalTicks - 1));
        final isAtKnob = (tickX - knobX).abs() < (trackWidth / (totalTicks - 1) / 2);
        
-       final tickColor = isAtKnob 
-             ? const Color(0xFFFFCC00) // Active tick yellow
-             : (isDark ? Colors.white : Colors.black); // Solid Black/White as requested
+       final Color tickColor;
+       if (isAtKnob) {
+         tickColor = const Color(0xFFFFCC00); // Active tick yellow
+       } else {
+         tickColor = isDark ? Colors.white : Colors.black; // Solid Black/White as requested
+       }
        
        final paint = Paint()
          ..color = tickColor

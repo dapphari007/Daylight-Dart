@@ -66,6 +66,7 @@ class _AddTimeZoneScreenState extends State<AddTimeZoneScreen> {
 
     Widget? suffixIconWidget;
     if (searchText.isNotEmpty) {
+      final iconColor = isDark ? Colors.grey : Colors.grey.shade600;
       suffixIconWidget = GestureDetector(
         onTap: () {
           _searchController.clear();
@@ -76,7 +77,7 @@ class _AddTimeZoneScreenState extends State<AddTimeZoneScreen> {
         child: Icon(
           CupertinoIcons.clear_circled_solid,
           size: 18,
-          color: isDark ? Colors.grey : Colors.grey.shade600,
+          color: iconColor,
         ),
       );
     }
@@ -175,7 +176,7 @@ class _AddTimeZoneScreenState extends State<AddTimeZoneScreen> {
                          const Icon(
                            CupertinoIcons.checkmark_alt_circle_fill, 
                            color: Color(0xFFFF9900), 
-                           size: 22
+                           size: 22,
                          ),
                     ],
                   ),
